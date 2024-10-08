@@ -50,12 +50,20 @@ class ScreenRecorderController {
       return;
     }
     _record = true;
-    await deleteAllFilesInDirectory((await getApplicationDocumentsDirectory()).path);
+    String path = await AppUtil.createFolderInAppDocDir('temp');
+    await deleteAllFilesInDirectory(path);
     _binding.addPostFrameCallback(postFrameCallback);
   }
 
   void stop() {
     _record = false;
+  }
+  void restart(){
+    if(_record == true){
+      return;
+    }
+
+    _record = true;
   }
 
   void postFrameCallback(Duration timestamp) {
@@ -100,7 +108,7 @@ class ScreenRecorderController {
     try {
       print('save image ${indexTest++} : ${image.width} ${image.height}');
       // DateTime now = DateTime.now();
-      String path = (await getApplicationDocumentsDirectory()).path;
+      String path = '${(await getApplicationDocumentsDirectory()).path}/temp/';
       // debugPrint('getApplicationDocumentsDirectory: ${DateTime.now().difference(now).inMilliseconds}');
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       // var decodePng = await  imagelib.decodePng(byteData!.buffer.asUint8List());
@@ -179,4 +187,25 @@ Future<void> deleteAllFilesInDirectory(String directoryPath) async {
   } else {
     print('Directory does not exist');
   }
+}
+
+
+
+class AppUtil{
+
+  static Future<String> createFolderInAppDocDir(String folderName) async {
+
+    //Get this App Document Directory
+    final Directory _appDocDir = await getApplicationDocumentsDirectory();
+    //App Document Directory + folder name
+    final Directory _appDocDirFolder =  Directory('${_appDocDir.path}/$folderName/');
+
+    if(await _appDocDirFolder.exists()){ //if folder already exists return path
+      return _appDocDirFolder.path;
+    }else{//if folder not exists create folder and then return its path
+      final Directory _appDocDirNewFolder=await _appDocDirFolder.create(recursive: true);
+      return _appDocDirNewFolder.path;
+    }
+  }
+
 }

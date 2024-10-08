@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit_config.dart';
-import 'package:ffmpeg_kit_flutter/statistics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -17,20 +16,10 @@ Future<File?> createVideoFromImages(List<int> imagePaths, int skipFramesBetweenC
     print('Estimate time: $estimateTime');
     String outputPath = await getOutputPath();
     final directory = await getApplicationDocumentsDirectory();
-    final command = '-framerate $frame -pattern_type glob -i ${directory.path}/*.png $outputPath';
+    final command = '-framerate $frame -pattern_type glob -i ${directory.path}/temp/*.png $outputPath';
 
     if (onProgress != null) {
-      // FFmpegKitConfig.enableLogCallback((log) {
-      //   final message = log.getMessage();
-      //   Duration? duration = getTimeFromFFmpegLog(message);
-      //
-      //   if(duration != null){
-      //     print('Duration: ${duration.inMilliseconds}');
-      //     double percent = duration.inMilliseconds / estimateTime;
-      //     ExportResult exportResult = ExportResult(status: ExportStatus.exporting, percent: percent);
-      //     onProgress.call(exportResult);
-      //   }
-      // });
+
       FFmpegKitConfig.enableStatisticsCallback((statistics) {
         final time = statistics.getTime();
         if (time != null) {
@@ -86,7 +75,7 @@ Future<File> waitForFile({
 Future<String> getOutputPath() async {
   final directory = await getApplicationDocumentsDirectory();
   String date = DateTime.now().millisecondsSinceEpoch.toString();
-  final outputPath = '${directory.path}/$date.mp4';
+  final outputPath = '${directory.path}/temp/$date.mp4';
   return outputPath;
 }
 
