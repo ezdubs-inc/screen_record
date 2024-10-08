@@ -1,7 +1,5 @@
-
 import 'dart:io';
 import 'dart:ui' as ui show Image, ImageByteFormat;
-
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -46,12 +44,13 @@ class ScreenRecorderController {
 
   bool _record = false;
 
-  void start() {
+  void start() async {
     // only start a video, if no recording is in progress
     if (_record == true) {
       return;
     }
     _record = true;
+    await deleteAllFilesInDirectory((await getApplicationDocumentsDirectory()).path);
     _binding.addPostFrameCallback(postFrameCallback);
   }
 
@@ -90,14 +89,15 @@ class ScreenRecorderController {
   }
 
   ui.Image? capture() {
-    final renderObject = _containerKey.currentContext!.findRenderObject()
-        as RenderRepaintBoundary;
+    final renderObject = _containerKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
 
     return renderObject.toImageSync(pixelRatio: pixelRatio);
   }
-  int  indexTest =0;
-  void _handleSaveImage(ui.Image image) async{
-    try{
+
+  int indexTest = 0;
+
+  void _handleSaveImage(ui.Image image) async {
+    try {
       print('save image ${indexTest++} : ${image.width} ${image.height}');
       // DateTime now = DateTime.now();
       String path = (await getApplicationDocumentsDirectory()).path;
@@ -113,13 +113,12 @@ class ScreenRecorderController {
       await File(fullPath).writeAsBytes(buffer);
       data.add(time);
       // debugPrint('save image: ${DateTime.now().difference(end).inMilliseconds}');
-    }
-    catch(e){
+    } catch (e) {
       print(e);
     }
-
   }
 }
+
 List<int> data = [];
 
 class ScreenRecorder extends StatelessWidget {
@@ -164,5 +163,20 @@ class ScreenRecorder extends StatelessWidget {
         child: child,
       ),
     );
+  }
+}
+
+Future<void> deleteAllFilesInDirectory(String directoryPath) async {
+  final directory = Directory(directoryPath);
+
+  if (await directory.exists()) {
+    final files = directory.listSync();
+    for (var file in files) {
+      if (file is File) {
+        await file.delete();
+      }
+    }
+  } else {
+    print('Directory does not exist');
   }
 }

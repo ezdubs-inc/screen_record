@@ -13,23 +13,36 @@ Future<File?> createVideoFromImages(List<int> imagePaths, int skipFramesBetweenC
     {ValueChanged<ExportResult>? onProgress}) async {
   try {
     var frame = 60 ~/ ((skipFramesBetweenCaptures != 0) ? skipFramesBetweenCaptures : 1);
-    int estimateTime = calculateVideoDuration(imagePaths.length, frame) * 10000;
+    int estimateTime = calculateVideoDuration(imagePaths.length, frame) ;
+    print('Estimate time: $estimateTime');
     String outputPath = await getOutputPath();
     final directory = await getApplicationDocumentsDirectory();
     final command = '-framerate $frame -pattern_type glob -i ${directory.path}/*.png $outputPath';
 
     if (onProgress != null) {
-      FFmpegKitConfig.enableStatisticsCallback(
-        (Statistics statistics) {
-          double timeInMilliseconds = statistics.getTime();
-          // print('timeInMilliseconds $timeInMilliseconds');
-          double progress = timeInMilliseconds / 10000;
-          if (progress <= 1) {
-            ExportResult exportResult = ExportResult(status: ExportStatus.exporting, percent: progress);
-            onProgress.call(exportResult);
+      // FFmpegKitConfig.enableLogCallback((log) {
+      //   final message = log.getMessage();
+      //   Duration? duration = getTimeFromFFmpegLog(message);
+      //
+      //   if(duration != null){
+      //     print('Duration: ${duration.inMilliseconds}');
+      //     double percent = duration.inMilliseconds / estimateTime;
+      //     ExportResult exportResult = ExportResult(status: ExportStatus.exporting, percent: percent);
+      //     onProgress.call(exportResult);
+      //   }
+      // });
+      FFmpegKitConfig.enableStatisticsCallback((statistics) {
+        final time = statistics.getTime();
+        if (time != null) {
+          double percent = time / estimateTime;
+          if(percent > 1){
+            percent = 1;
           }
-        },
-      );
+          ExportResult exportResult = ExportResult(status: ExportStatus.exporting, percent: percent);
+          onProgress.call(exportResult);
+        }
+      });
+
     }
     var session = await FFmpegKit.execute(command);
 
@@ -81,5 +94,35 @@ int calculateVideoDuration(int numFrames, int fps) {
   if (fps <= 0) {
     throw ArgumentError('FPS must be greater than zero');
   }
-  return (numFrames / fps).toInt();
+  return numFrames *1000~/ fps;
+}
+
+Duration? getTimeFromFFmpegLog(String log) {
+  try {
+    var list = log.split(' ');
+    String timeString = list.firstWhere((e) => e.contains('time'), orElse: () => '');
+    if (timeString.isEmpty) {
+      return null;
+    }
+
+    var time = timeString.split('=').last;
+    if (time == 'N/A') {
+      return null;
+    }
+    var part = time.split(':');
+    final hours = int.parse(part[0]);
+    final minutes = int.parse(part[1]);
+    final secondsParts = part[2].split('.');
+    final seconds = int.parse(secondsParts[0]);
+    // final milliseconds = secondsParts.length > 1 ? int.parse(secondsParts[1]) : 0;
+
+    return Duration(
+      hours: hours,
+      minutes: hours,
+      seconds: minutes,
+      milliseconds: seconds,
+    );
+  } catch (e, s) {
+    print(e);
+  }
 }

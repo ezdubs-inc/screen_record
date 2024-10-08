@@ -22,18 +22,20 @@ class _AnimatedScreenState extends State<AnimatedScreen> {
   @override
   void initState() {
     // TODO: implement initState
-    _controller = VideoPlayerController.file(widget.file)..initialize().then((value) => _controller.play());
+    _controller = VideoPlayerController.file(
+      widget.file,
+      videoPlayerOptions: VideoPlayerOptions(),
+    )..initialize().then((value) => _controller.play());
 
     _controller.addListener(() {
       if (_controller.value.isPlaying) {
-        print(_controller.value.duration.inMilliseconds);
+        print('Playing ${_controller.value.duration.inSeconds}');
       } else {
         print('Pause');
       }
     });
     super.initState();
   }
-
 
   @override
   Widget build(BuildContext context) {
