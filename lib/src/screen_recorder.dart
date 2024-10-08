@@ -19,7 +19,7 @@ class ScreenRecorderController {
     SchedulerBinding? binding,
   })  : _containerKey = GlobalKey(),
         _binding = binding ?? SchedulerBinding.instance,
-        _exporter = exporter ?? Exporter();
+        _exporter = exporter ?? Exporter(skipFramesBetweenCaptures);
 
   final GlobalKey _containerKey;
   final SchedulerBinding _binding;
@@ -95,22 +95,29 @@ class ScreenRecorderController {
 
     return renderObject.toImageSync(pixelRatio: pixelRatio);
   }
-
+  int  indexTest =0;
   void _handleSaveImage(ui.Image image) async{
-    // DateTime now = DateTime.now();
-    String path = (await getApplicationDocumentsDirectory()).path;
-    // debugPrint('getApplicationDocumentsDirectory: ${DateTime.now().difference(now).inMilliseconds}');
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    // var decodePng = await  imagelib.decodePng(byteData!.buffer.asUint8List());
+    try{
+      print('save image ${indexTest++} : ${image.width} ${image.height}');
+      // DateTime now = DateTime.now();
+      String path = (await getApplicationDocumentsDirectory()).path;
+      // debugPrint('getApplicationDocumentsDirectory: ${DateTime.now().difference(now).inMilliseconds}');
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      // var decodePng = await  imagelib.decodePng(byteData!.buffer.asUint8List());
 
-    final buffer = byteData!.buffer.asUint8List();
-    // DateTime end = DateTime.now();
-    // debugPrint('covertImage: ${DateTime.now().difference(now).inMilliseconds}');
-    int time = DateTime.now().millisecondsSinceEpoch;
-    String fullPath = '$path/$time.png';
-    await File(fullPath).writeAsBytes(buffer);
-    data.add(time);
-    // debugPrint('save image: ${DateTime.now().difference(end).inMilliseconds}');
+      final buffer = byteData!.buffer.asUint8List();
+      // DateTime end = DateTime.now();
+      // debugPrint('covertImage: ${DateTime.now().difference(now).inMilliseconds}');
+      int time = DateTime.now().millisecondsSinceEpoch;
+      String fullPath = '$path/$time.png';
+      await File(fullPath).writeAsBytes(buffer);
+      data.add(time);
+      // debugPrint('save image: ${DateTime.now().difference(end).inMilliseconds}');
+    }
+    catch(e){
+      print(e);
+    }
+
   }
 }
 List<int> data = [];

@@ -52,7 +52,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   bool get canExport => controller.exporter.hasFrames;
   double percentExport = 0;
-  late PercentanceCallBack percentanceCallBack;
 
   Timer? _timer;
 
@@ -70,14 +69,30 @@ class _MyHomePageState extends State<MyHomePage> {
           timer.cancel();
           DateTime now = DateTime.now();
           try {
-            var gif = await controller.exporter.exportVideo();
-
-            await showDialog(
-              context: context as dynamic,
-              builder: (context) {
-                return Dialog(
-                  child: AnimatedScreen(file: gif!),
-                );
+            var gif = await controller.exporter.exportVideo(
+              onProgress: (status) {
+                if (status.status == ExportStatus.exporting) {
+                  showAboutDialog(
+                    context: context,
+                    children: [
+                      Center(
+                        child: CircularProgressIndicator(
+                          value: status.percent,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                if (status.status == ExportStatus.exported) {
+                  showDialog(
+                    context: context as dynamic,
+                    builder: (context) {
+                      return Dialog(
+                        child: AnimatedScreen(file: status.file!),
+                      );
+                    },
+                  );
+                }
               },
             );
           } catch (e) {
@@ -94,12 +109,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     // TODO: implement initState
-    percentanceCallBack = PercentanceCallBack(percentCallBack: (value) {
-      // renderPercent.value = value;
-      print(value);
-      // percentExport = value;
-      // setState(() {});
-    });
     super.initState();
   }
 
@@ -135,7 +144,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       onPressed: () {
                         controller.start();
                         controller.exporter.clear();
-                        startTimer();
+                        controller.start();
+                        // startTimer();
                         setState(() {
                           _recording = true;
                         });
@@ -164,80 +174,27 @@ class _MyHomePageState extends State<MyHomePage> {
                         setState(() {
                           _exporting = true;
                         });
-                        var frames = await controller.exporter.exportFrames();
-                        if (frames == null) {
-                          throw Exception();
-                        }
-                        setState(() => _exporting = false);
-                        showDialog(
-                          context: context as dynamic,
-                          builder: (context) {
-                            return AlertDialog(
-                              content: SizedBox(
-                                height: 500,
-                                width: 500,
-                                child: ListView.builder(
-                                  padding: const EdgeInsets.all(8.0),
-                                  itemCount: frames.length,
-                                  itemBuilder: (context, index) {
-                                    final image = frames[index].image;
-                                    return SizedBox(
-                                      height: 150,
-                                      child: Image.memory(
-                                        image.buffer.asUint8List(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            );
+                        var frames = await controller.exporter.exportVideo(
+                          onProgress: (status) {
+                            if (status.status == ExportStatus.exporting) {
+                               print(status.percent);
+                            }
+                            if (status.status == ExportStatus.exported) {
+                              showDialog(
+                                context: context as dynamic,
+                                builder: (context) {
+                                  return Dialog(
+                                    child: AnimatedScreen(file: status.file!),
+                                  );
+                                },
+                              );
+                            }
                           },
                         );
                       },
                       child: const Text('Export as frames'),
                     ),
                   ),
-                if (canExport && !_exporting) ...[
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        setState(() {
-                          _exporting = true;
-                        });
-                        var gif = await controller.exporter.exportGif(
-                          onProgress: (value) {
-                            print(value);
-                          },
-                        );
-                        if (gif == null) {
-                          throw Exception();
-                        }
-                        setState(() => _exporting = false);
-                        showDialog(
-                          context: context as dynamic,
-                          builder: (context) {
-                            return AlertDialog(
-                              content: Image.memory(Uint8List.fromList(gif)),
-                            );
-                          },
-                        );
-                      },
-                      child: const Text('Export as GIF'),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          controller.exporter.clear();
-                        });
-                      },
-                      child: const Text('Clear recorded data'),
-                    ),
-                  )
-                ]
               ]
             ],
           ),

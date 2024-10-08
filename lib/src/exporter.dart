@@ -9,15 +9,16 @@ import 'package:screen_record/src/screen_recorder.dart';
 import 'create_video.dart';
 import 'frame.dart';
 
-final receivePort = ReceivePort();
-
-
 class Exporter {
+  Exporter(this.skipFramesBetweenCaptures);
+
+  final int skipFramesBetweenCaptures;
+
   static final List<Frame> _frames = [];
   int _maxWidthFrame = 0;
   int _maxHeightFrame = 0;
 
- static List<Frame> get frames => _frames;
+  static List<Frame> get frames => _frames;
 
   void onNewFrame(Frame frame) {
     _frames.add(frame);
@@ -31,7 +32,6 @@ class Exporter {
   }
 
   bool get hasFrames => _frames.isNotEmpty;
-
 
   Future<List<RawFrame>?> exportFrames() async {
     if (_frames.isEmpty) {
@@ -59,8 +59,6 @@ class Exporter {
     return bytesImages;
   }
 
-
-
   static Future<image.Image> convertUiImageToImage(ui.Image uiImage) async {
     // Convert ui.Image to ByteData
     final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
@@ -80,11 +78,14 @@ class Exporter {
     return _image;
   }
 
-  Future<File?> exportVideo()async{
+  Future<File?> exportVideo({ValueChanged<ExportResult>? onProgress}) async {
     var _data = data;
-    return await  createVideoFromImages(_data);
+    return await createVideoFromImages(
+      _data,
+      skipFramesBetweenCaptures,
+      onProgress: onProgress,
+    );
   }
-
 
   Future<List<int>?> exportGif({ValueChanged<ExportResult>? onProgress}) async {
     ExportResult exportStatus = ExportResult(status: ExportStatus.exporting, percent: 0);
@@ -98,7 +99,6 @@ class Exporter {
     }
     exportStatus = ExportResult(status: ExportStatus.exported, percent: 0);
     onProgress?.call(exportStatus);
-
 
     return await _exportGif(DataHolder(frames, _maxWidthFrame, _maxHeightFrame), onProgress: onProgress);
   }
@@ -123,7 +123,7 @@ class Exporter {
 
       DataFrame dataFrame = DataFrame(frame: frame, mainImage: mainImage, width: width, height: height);
 
-      var newFrame =  await _handelFrame(dataFrame);
+      var newFrame = await _handelFrame(dataFrame);
 
       if (newFrame == null) {
         continue;
@@ -135,13 +135,16 @@ class Exporter {
     DateTime endAddFrame = DateTime.now();
     debugPrint('End Exporting gif v1 ${endAddFrame.difference(start).inSeconds}');
 
-    var resul = image.encodeGif(mainImage, );
+    var resul = image.encodeGif(
+      mainImage,
+    );
 
     debugPrint('encodeGif ${DateTime.now().difference(endAddFrame).inSeconds}');
     ExportResult exportStatus = ExportResult(status: ExportStatus.encoded);
     onProgress?.call(exportStatus);
     return resul;
   }
+
   static image.PaletteUint8 _convertPalette(image.Palette palette) {
     final newPalette = image.PaletteUint8(palette.numColors, 4);
     for (var i = 0; i < palette.numColors; i++) {
@@ -161,7 +164,7 @@ class Exporter {
     } else {
       image32 = srcImage;
     }
-    final newImage =  image.quantize(image32);
+    final newImage = image.quantize(image32);
 
     // GifEncoder will use palette colors with a 0 alpha as transparent. Look at the pixels
     // of the original image and set the alpha of the palette color to 0 if the pixel is below
@@ -248,28 +251,14 @@ enum ExportStatus {
 
 class ExportResult {
   final ExportStatus status;
-  final List<int>? data;
+  final File? file;
   final double? percent;
 
-  ExportResult({required this.status, this.data, this.percent});
+  ExportResult({required this.status, this.file, this.percent});
 
   //to String
   @override
   String toString() {
     return 'ExportResult(status: $status, data: $data, percent: $percent)';
   }
-}
-
-class PercentanceCallBack {
-  final ValueChanged<double>? percentCallBack;
-
-  void percentProcessCallBack(double percent) {
-    try {
-      percentCallBack?.call(percent);
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  PercentanceCallBack({this.percentCallBack});
 }
