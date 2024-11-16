@@ -1,13 +1,17 @@
 import 'dart:io';
-import 'dart:ui' as ui show Image, ImageByteFormat;
+import 'dart:ui' as ui;
 
+import 'package:bitmap/bitmap.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:image/image.dart' as imagelib;
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'exporter.dart';
-import 'frame.dart';
+import 'package:path/path.dart';
+import '../screen_record.dart';
+
+Size globalSize = const Size(0, 0);
 
 class ScreenRecorderController {
   ScreenRecorderController({
@@ -16,14 +20,12 @@ class ScreenRecorderController {
     this.skipFramesBetweenCaptures = 2,
     SchedulerBinding? binding,
   })  : _containerKey = GlobalKey(),
-        _binding = binding ?? SchedulerBinding.instance,
-        _exporter = exporter ?? Exporter(skipFramesBetweenCaptures);
+        _binding = binding ?? SchedulerBinding.instance;
 
   final GlobalKey _containerKey;
   final SchedulerBinding _binding;
-  final Exporter _exporter;
 
-  Exporter get exporter => _exporter;
+  Exporter get exporter => Exporter(skipFramesBetweenCaptures);
 
   /// The pixelRatio describes the scale between the logical pixels and the size
   /// of the output image. Specifying 1.0 will give you a 1:1 mapping between
@@ -44,26 +46,49 @@ class ScreenRecorderController {
 
   bool _record = false;
 
-  void start() async {
-    // only start a video, if no recording is in progress
+  DateTime? startTime;
+  DateTime? endTime;
+
+  /// Clear all folder rendering in cache
+  /// Reset biến startTime và biến engTime
+  /// Gán biến startTime
+
+  Duration? get duration {
+    if (startTime == null) {
+      throw Exception('Recording has not started yet');
+    }
+    if (endTime == null) {
+      throw Exception('Recording has not stopped yet');
+    }
+
+    return endTime!.difference(startTime!);
+  }
+
+  int fileIndex = 0;
+
+  Future<void> start() async {
+    endTime = null;
+    fileIndex = 1;
     if (_record == true) {
       return;
     }
     _record = true;
-    String path = await AppUtil.createFolderInAppDocDir('temp');
-    await deleteAllFilesInDirectory(path);
+
+    Directory directory = await getApplicationDocumentsDirectory();
+    String path = directory.path;
+    Directory renderingDir = Directory(join(path, 'rendering'));
+    if(!await renderingDir.exists()) {
+      await renderingDir.create();
+    }
+    await clearRenderingDirectory();
+
+    startTime = DateTime.now();
     _binding.addPostFrameCallback(postFrameCallback);
   }
 
   void stop() {
     _record = false;
-  }
-  void restart(){
-    if(_record == true){
-      return;
-    }
-
-    _record = true;
+    endTime = DateTime.now();
   }
 
   void postFrameCallback(Duration timestamp) {
@@ -89,45 +114,50 @@ class ScreenRecorderController {
         return;
       }
       _handleSaveImage(image);
-      _exporter.onNewFrame(Frame(timestamp, image));
     } catch (e) {
-      debugPrint(e.toString());
+      debugPrint('Error while capturing frame: $e $runtimeType');
     }
     _binding.addPostFrameCallback(postFrameCallback);
   }
 
   ui.Image? capture() {
     final renderObject = _containerKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-
     return renderObject.toImageSync(pixelRatio: pixelRatio);
   }
 
   int indexTest = 0;
 
-  void _handleSaveImage(ui.Image image) async {
+  Future<bool> _handleSaveImage(ui.Image image) async {
     try {
-      print('save image ${indexTest++} : ${image.width} ${image.height}');
-      // DateTime now = DateTime.now();
-      String path = '${(await getApplicationDocumentsDirectory()).path}/temp/';
-      // debugPrint('getApplicationDocumentsDirectory: ${DateTime.now().difference(now).inMilliseconds}');
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      // var decodePng = await  imagelib.decodePng(byteData!.buffer.asUint8List());
+      globalSize = Size(image.width.toDouble(), image.height.toDouble());
+      Bitmap bitmap = await uiImageToBitmap(image);
 
-      final buffer = byteData!.buffer.asUint8List();
-      // DateTime end = DateTime.now();
-      // debugPrint('covertImage: ${DateTime.now().difference(now).inMilliseconds}');
-      int time = DateTime.now().millisecondsSinceEpoch;
-      String fullPath = '$path/$time.png';
-      await File(fullPath).writeAsBytes(buffer);
-      data.add(time);
-      // debugPrint('save image: ${DateTime.now().difference(end).inMilliseconds}');
+      File file = await saveBitmapToCache(bitmap, 'rendering', fileIndex++);
+      if (file.existsSync()) {
+        return true;
+      }
     } catch (e) {
-      print(e);
+      debugPrint('Error while saving image: $e');
     }
+    return false;
+  }
+
+  Future<File> saveBitmapToCache(Bitmap bitmap, String folderName, int index) async {
+
+    String cacheDir = (await getApplicationDocumentsDirectory()).path;
+    String ext = '.bmp';
+    String nameWithExtension = 'frame_${generateFormattedString(index)}$ext';
+    String fullPath = join(cacheDir, folderName, nameWithExtension);
+    File file = File(fullPath);
+    file = await file.writeAsBytes(bitmap.buildHeaded());
+    return file;
+  }
+
+  String generateFormattedString(int number) {
+    final formatter = NumberFormat('0000');
+    return formatter.format(number);
   }
 }
-
-List<int> data = [];
 
 class ScreenRecorder extends StatelessWidget {
   const ScreenRecorder({
@@ -174,9 +204,10 @@ class ScreenRecorder extends StatelessWidget {
   }
 }
 
-Future<void> deleteAllFilesInDirectory(String directoryPath) async {
-  final directory = Directory(directoryPath);
-
+Future<void> clearRenderingDirectory() async {
+  String documentPath = (await getApplicationDocumentsDirectory()).path;
+  String path = join(documentPath, 'rendering');
+  final directory = Directory(path);
   if (await directory.exists()) {
     final files = directory.listSync();
     for (var file in files) {
@@ -184,28 +215,31 @@ Future<void> deleteAllFilesInDirectory(String directoryPath) async {
         await file.delete();
       }
     }
-  } else {
-    print('Directory does not exist');
+  }
+}
+
+class AppUtil {
+  static Future<String> createFolderInAppDocDir(String folderName) async {
+    //Get this App Document Directory
+    final Directory _appDocDir = await getApplicationDocumentsDirectory();
+    //App Document Directory + folder name
+    final Directory _appDocDirFolder = Directory('${_appDocDir.path}/$folderName/');
+
+    if (await _appDocDirFolder.exists()) {
+      //if folder already exists return path
+      return _appDocDirFolder.path;
+    } else {
+      //if folder not exists create folder and then return its path
+      final Directory _appDocDirNewFolder = await _appDocDirFolder.create(recursive: true);
+      return _appDocDirNewFolder.path;
+    }
   }
 }
 
 
-
-class AppUtil{
-
-  static Future<String> createFolderInAppDocDir(String folderName) async {
-
-    //Get this App Document Directory
-    final Directory _appDocDir = await getApplicationDocumentsDirectory();
-    //App Document Directory + folder name
-    final Directory _appDocDirFolder =  Directory('${_appDocDir.path}/$folderName/');
-
-    if(await _appDocDirFolder.exists()){ //if folder already exists return path
-      return _appDocDirFolder.path;
-    }else{//if folder not exists create folder and then return its path
-      final Directory _appDocDirNewFolder=await _appDocDirFolder.create(recursive: true);
-      return _appDocDirNewFolder.path;
-    }
-  }
-
+/// Chuyển đổi ui.Image thành Bitmap
+Future<Bitmap> uiImageToBitmap(ui.Image image) async {
+  final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+  final buffer = byteData!.buffer.asUint8List();
+  return Bitmap.fromHeadless(image.width, image.height, buffer);
 }

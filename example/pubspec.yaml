@@ -39,7 +39,8 @@ dependencies:
   ffmpeg_kit_flutter: ^6.0.3
   screen_record:
     path: ../
-  video_player: ^2.9.1
+#  video_player: ^2.9.2
+  bitmap: ^0.2.0
 
 dev_dependencies:
   flutter_test:

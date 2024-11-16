@@ -79,11 +79,8 @@ class Exporter {
   }
 
   Future<File?> exportVideo({ValueChanged<ExportResult>? onProgress}) async {
-    var _data = data;
     return await createVideoFromImages(
-      _data,
-      skipFramesBetweenCaptures,
-      onProgress: onProgress,
+
     );
   }
 
@@ -259,6 +256,6 @@ class ExportResult {
   //to String
   @override
   String toString() {
-    return 'ExportResult(status: $status, data: $data, percent: $percent)';
+    return 'ExportResult(status: $status,  percent: $percent)';
   }
 }

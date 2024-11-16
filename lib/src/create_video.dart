@@ -1,38 +1,33 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit_config.dart';
-import 'package:flutter/cupertino.dart';
+
+import 'package:media_meta_plus/media_meta_plus.dart';
+
 import 'package:path_provider/path_provider.dart';
 
-import '../screen_record.dart';
+import 'exporter.dart';
+import 'package:path/path.dart';
 
-Future<File?> createVideoFromImages(List<int> imagePaths, int skipFramesBetweenCaptures,
-    {ValueChanged<ExportResult>? onProgress}) async {
+Future<File?> createVideoFromImages() async {
   try {
-    var frame = 60 ~/ ((skipFramesBetweenCaptures != 0) ? skipFramesBetweenCaptures : 1);
-    int estimateTime = calculateVideoDuration(imagePaths.length, frame) ;
-    print('Estimate time: $estimateTime');
-    String outputPath = await getOutputPath();
-    final directory = await getApplicationDocumentsDirectory();
-    final command = '-framerate $frame -pattern_type glob -i ${directory.path}/temp/*.png $outputPath';
+    /// tinh toan: estimation time de xac dinh % progress
+    // final int frame = await estimateTimeRendering(duration);
+    String cacheDir = (await getApplicationDocumentsDirectory()).path;
+    final input = join(cacheDir, 'rendering');
 
-    if (onProgress != null) {
+    String outputName = DateTime.now().millisecondsSinceEpoch.toString();
+    //
+    final outputPath = join(cacheDir, '$outputName.mp4');
 
-      FFmpegKitConfig.enableStatisticsCallback((statistics) {
-        final time = statistics.getTime();
-        if (time != null) {
-          double percent = time / estimateTime;
-          if(percent > 1){
-            percent = 1;
-          }
-          ExportResult exportResult = ExportResult(status: ExportStatus.exporting, percent: percent);
-          onProgress.call(exportResult);
-        }
-      });
 
-    }
+    final Directory directory = Directory(input);
+    String temp = '${directory.path}/frame_%04d.bmp';
+
+    String command = '-i $temp -threads 8  $outputPath';
+    var list = await directory.listSync();
+    print(list.length);
+
     var session = await FFmpegKit.execute(command);
 
     var a = await session.getReturnCode();
@@ -45,10 +40,11 @@ Future<File?> createVideoFromImages(List<int> imagePaths, int skipFramesBetweenC
         file: File(outputPath),
         percent: 1,
       );
-      onProgress?.call(exportResult);
       session.cancel();
+
       return File(outputPath);
     }
+
     session.cancel();
     return null;
   } catch (e, s) {
@@ -83,35 +79,5 @@ int calculateVideoDuration(int numFrames, int fps) {
   if (fps <= 0) {
     throw ArgumentError('FPS must be greater than zero');
   }
-  return numFrames *1000~/ fps;
-}
-
-Duration? getTimeFromFFmpegLog(String log) {
-  try {
-    var list = log.split(' ');
-    String timeString = list.firstWhere((e) => e.contains('time'), orElse: () => '');
-    if (timeString.isEmpty) {
-      return null;
-    }
-
-    var time = timeString.split('=').last;
-    if (time == 'N/A') {
-      return null;
-    }
-    var part = time.split(':');
-    final hours = int.parse(part[0]);
-    final minutes = int.parse(part[1]);
-    final secondsParts = part[2].split('.');
-    final seconds = int.parse(secondsParts[0]);
-    // final milliseconds = secondsParts.length > 1 ? int.parse(secondsParts[1]) : 0;
-
-    return Duration(
-      hours: hours,
-      minutes: hours,
-      seconds: minutes,
-      milliseconds: seconds,
-    );
-  } catch (e, s) {
-    print(e);
-  }
+  return numFrames * 1000 ~/ fps;
 }
