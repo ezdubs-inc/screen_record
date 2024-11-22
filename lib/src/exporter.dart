@@ -3,14 +3,15 @@ import 'dart:io';
 import 'dart:ui' as ui show ImageByteFormat, Image;
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as image;
+import '../screen_record.dart';
 import 'create_video.dart';
 import 'frame.dart';
 
 class Exporter {
-  Exporter(this.skipFramesBetweenCaptures);
+  Exporter(this.skipFramesBetweenCaptures, this.controller);
 
   final int skipFramesBetweenCaptures;
-
+  final ScreenRecorderController controller;
   static final List<Frame> _frames = [];
   int _maxWidthFrame = 0;
   int _maxHeightFrame = 0;
@@ -30,31 +31,7 @@ class Exporter {
 
   bool get hasFrames => _frames.isNotEmpty;
 
-  // Future<List<RawFrame>?> exportFrames() async {
-  //   if (_frames.isEmpty) {
-  //     return null;
-  //   }
-  //   final bytesImages = <RawFrame>[];
-  //   for (final frame in _frames) {
-  //     const format = ui.ImageByteFormat.png;
-  //     final bytesImage = await frame.image.toByteData(format: format);
-  //
-  //     if (frame.image.width >= _maxWidthFrame) {
-  //       _maxWidthFrame = frame.image.width;
-  //     }
-  //
-  //     if (frame.image.height >= _maxHeightFrame) {
-  //       _maxHeightFrame = frame.image.height;
-  //     }
-  //
-  //     if (bytesImage != null) {
-  //       bytesImages.add(RawFrame(16, bytesImage));
-  //     } else {
-  //       debugPrint('Skipped frame while enconding');
-  //     }
-  //   }
-  //   return bytesImages;
-  // }
+  Duration? get duration => controller.duration;
 
   static Future<image.Image> convertUiImageToImage(ui.Image uiImage) async {
     // Convert ui.Image to ByteData
@@ -75,14 +52,25 @@ class Exporter {
     return _image;
   }
 
-  Future<File?> exportVideo({ValueChanged<ExportResult>? onProgress}) async {
-    return await createVideoFromImages();
+  Future<File?> exportVideo(
+      {ValueChanged<ExportResult>? onProgress, double speed = 1}) async {
+    if (duration == null) {
+      throw Exception('Duration is null');
+    }
+    File? result = await createVideoFromImages(
+      duration: duration!,
+      onProgress: onProgress,
+      speed: speed,
+    );
+    clearRenderingDirectory();
+    return result;
   }
 
   static image.PaletteUint8 _convertPalette(image.Palette palette) {
     final newPalette = image.PaletteUint8(palette.numColors, 4);
     for (var i = 0; i < palette.numColors; i++) {
-      newPalette.setRgba(i, palette.getRed(i), palette.getGreen(i), palette.getBlue(i), 255);
+      newPalette.setRgba(
+          i, palette.getRed(i), palette.getGreen(i), palette.getBlue(i), 255);
     }
     return newPalette;
   }
@@ -113,7 +101,8 @@ class Exporter {
       for (final srcPixel in srcFrame) {
         if (srcPixel.a < transparencyThreshold) {
           final newPixel = newFrame.getPixel(srcPixel.x, srcPixel.y);
-          palette.setAlpha(newPixel.index.toInt(), 0); // Set the palette color alpha to 0
+          palette.setAlpha(
+              newPixel.index.toInt(), 0); // Set the palette color alpha to 0
         }
       }
 
@@ -156,7 +145,11 @@ class DataFrame {
   final int width;
   final int height;
 
-  DataFrame({required this.frame, required this.mainImage, required this.width, required this.height});
+  DataFrame(
+      {required this.frame,
+      required this.mainImage,
+      required this.width,
+      required this.height});
 }
 
 class RawFrame {

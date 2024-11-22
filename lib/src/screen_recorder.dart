@@ -25,7 +25,7 @@ class ScreenRecorderController {
   final GlobalKey _containerKey;
   final SchedulerBinding _binding;
 
-  Exporter get exporter => Exporter(skipFramesBetweenCaptures);
+  Exporter get exporter => Exporter(skipFramesBetweenCaptures, this);
 
   /// The pixelRatio describes the scale between the logical pixels and the size
   /// of the output image. Specifying 1.0 will give you a 1:1 mapping between
