@@ -10,10 +10,10 @@ import 'sample_animation.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  FFmpegKitConfig.enableLogCallback((log) {
-    final message = log.getMessage();
-    print(message);
-  });
+  // FFmpegKitConfig.enableLogCallback((log) {
+  //   final message = log.getMessage();
+  //   print(message);
+  // });
   runApp(const MyApp());
 }
 
@@ -111,7 +111,9 @@ class _MyHomePageState extends State<MyHomePage> {
               if (status == RecordStatus.stop)
                 ElevatedButton(
                   onPressed: () async {
-                    File? file = await controller.exporter.exportVideo();
+                    File? file = await controller.exporter.exportVideo(onProgress: (value){
+                      print(value);
+                    });
                     await showDialog(
                       context: context,
                       builder: (context) {
