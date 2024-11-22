@@ -125,51 +125,8 @@ class FileUtils {
   /// [image] là hình ảnh muốn nén (giảm chất lượng)
   /// [percentReduce] % bạn muốn giảm. Giả sử nếu  1 ảnh 10M, percentReduce = 50
   /// -> file có kích thước 5M
-// static Future<File> compressImage(File file, int percentReduce) async {
-//   assert(percentReduce > 0 && percentReduce < 100);
-//
-//   if (!file.existsSync()) {
-//     throw Exception('File not exist');
-//   }
-//
-//   if (!file.isImageTypeSupported()) {
-//     throw Exception('File is not Image or Image not support');
-//   }
-//
-//   File compressedFile = await FlutterNativeImage.compressImage(file.path,
-//       percentage: percentReduce);
-//
-//   return compressedFile;
-// }
-
-// static Future<File> compressVideo(File file,
-//     {bool deleteOrigin = false,
-//       VideoQuality videoQuality = VideoQuality.MediumQuality,
-//       bool includeAudio = true}) async {
-//   if (!file.existsSync()) {
-//     throw Exception('File not exist');
-//   }
-//
-//   if (!file.isVideoTypeSupported()) {
-//     throw Exception('File is not Video or Video not support');
-//   }
-//
-//   final MediaInfo? info = await VideoCompress.compressVideo(
-//     file.path,
-//     quality: videoQuality,
-//     deleteOrigin: false,
-//     includeAudio: true,
-//   );
-//
-//   if (info?.file == null) {
-//     throw Exception('Err from lib VideoCompress ');
-//   }
-//
-//   return File(info?.file?.path ?? '');
-// }
-
   static int getFileSize(String path) {
-    return File(path ?? '').getSizeByte();
+    return File(path).getSizeByte();
   }
 
   static bool checkFileSize(File file, int maxSizeKb) {

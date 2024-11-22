@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit_config.dart';
 import 'package:flutter/material.dart';
-import 'package:screen_record_plus/screen_record.dart';
+import 'package:screen_record_plus/screen_record_plus.dart';
 
 import 'animated_screen.dart';
 import 'sample_animation.dart';

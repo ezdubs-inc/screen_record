@@ -3,9 +3,8 @@ import 'dart:io';
 import 'dart:ui' as ui show ImageByteFormat, Image;
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as image;
-import '../screen_record.dart';
+import '../screen_record_plus.dart';
 import 'create_video.dart';
-import 'frame.dart';
 
 class Exporter {
   Exporter(this.skipFramesBetweenCaptures, this.controller);
@@ -13,8 +12,6 @@ class Exporter {
   final int skipFramesBetweenCaptures;
   final ScreenRecorderController controller;
   static final List<Frame> _frames = [];
-  int _maxWidthFrame = 0;
-  int _maxHeightFrame = 0;
 
   static List<Frame> get frames => _frames;
 
@@ -24,9 +21,6 @@ class Exporter {
 
   void clear() {
     _frames.clear();
-
-    _maxWidthFrame = 0;
-    _maxHeightFrame = 0;
   }
 
   bool get hasFrames => _frames.isNotEmpty;
@@ -110,32 +104,6 @@ class Exporter {
     }
 
     return newImage;
-  }
-
-  static Future<image.Image?> _handelFrame(DataFrame data) async {
-    final iAsBytes = data.frame.image.buffer.asUint8List();
-    final decodedImage = image.decodePng(iAsBytes);
-
-    if (decodedImage == null) {
-      debugPrint('Skipped frame while enconding');
-      return null;
-    }
-    decodedImage.frameDuration = data.frame.durationInMillis;
-
-    var imageFrame = encodeGifWIthTransparency(
-      image.copyExpandCanvas(
-        decodedImage,
-        newWidth: data.width,
-        newHeight: data.height,
-        toImage: image.Image(
-          width: data.width,
-          height: data.height,
-          format: decodedImage.format,
-          numChannels: 4,
-        ),
-      ),
-    );
-    return imageFrame;
   }
 }
 

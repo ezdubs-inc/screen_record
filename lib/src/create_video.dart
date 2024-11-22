@@ -53,6 +53,7 @@ Future<File?> createVideoFromImages({
         file: File(outputPath),
         percent: 1,
       );
+      onProgress?.call(exportResult);
       session.cancel();
 
       return File(outputPath);
@@ -60,10 +61,9 @@ Future<File?> createVideoFromImages({
 
     session.cancel();
     return null;
-  } catch (e, s) {
-    print(e);
+  } catch (e) {
+    throw Exception('Create Video Failed: $e');
   }
-  return null;
 }
 
 Future<File> waitForFile({

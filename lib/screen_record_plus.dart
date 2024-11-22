@@ -1,4 +1,4 @@
-library screen_record;
+library screen_record_plus;
 
 export 'src/exporter.dart';
 export 'src/frame.dart';
