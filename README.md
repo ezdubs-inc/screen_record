@@ -3,7 +3,9 @@ Taking inspiration from the [screen_recorder](https://pub.dev/packages/screen_re
 
 # Features:
 
-- [x] Record screen end export mp4. 
+- [x] Record screen end export mp4.
+      
+[Screen demo](https://github.com/BrianTran24/screen_record/blob/main/assets/ScreenRecording2024-11-22at17.06.33-ezgif.com-video-to-gif-converter.gif?raw=true)
 
 
 # App Demo:
