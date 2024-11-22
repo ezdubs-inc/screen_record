@@ -1,11 +1,9 @@
-import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
+
 
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit_config.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:screen_record/screen_record.dart';
+import 'package:screen_record_plus/screen_record.dart';
 
 import 'animated_screen.dart';
 import 'sample_animation.dart';

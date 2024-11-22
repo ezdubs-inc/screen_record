@@ -37,7 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   path_provider: ^2.0.2
   ffmpeg_kit_flutter: ^6.0.3
-  screen_record:
+  screen_record_plus:
     path: ../
 #  video_player: ^2.9.2
   bitmap: ^0.2.0

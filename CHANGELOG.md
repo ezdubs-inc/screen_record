@@ -3,6 +3,6 @@
 * Init project with basic structure
 
 ## TODO 
-* remove hàm không cần thiết
+* remove unnecessary function
 * Add percent callback to progress bar
 * Handle error when process file

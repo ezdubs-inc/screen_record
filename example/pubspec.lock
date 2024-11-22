@@ -296,7 +296,7 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
-  screen_record:
+  screen_record_plus:
     dependency: "direct main"
     description:
       path: ".."

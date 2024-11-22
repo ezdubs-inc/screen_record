@@ -1,11 +1,8 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:ui' as ui show ImageByteFormat, Image;
-
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as image;
-import 'package:screen_record/src/screen_recorder.dart';
 import 'create_video.dart';
 import 'frame.dart';
 
@@ -33,31 +30,31 @@ class Exporter {
 
   bool get hasFrames => _frames.isNotEmpty;
 
-  Future<List<RawFrame>?> exportFrames() async {
-    if (_frames.isEmpty) {
-      return null;
-    }
-    final bytesImages = <RawFrame>[];
-    for (final frame in _frames) {
-      const format = ui.ImageByteFormat.png;
-      final bytesImage = await frame.image.toByteData(format: format);
-
-      if (frame.image.width >= _maxWidthFrame) {
-        _maxWidthFrame = frame.image.width;
-      }
-
-      if (frame.image.height >= _maxHeightFrame) {
-        _maxHeightFrame = frame.image.height;
-      }
-
-      if (bytesImage != null) {
-        bytesImages.add(RawFrame(16, bytesImage));
-      } else {
-        debugPrint('Skipped frame while enconding');
-      }
-    }
-    return bytesImages;
-  }
+  // Future<List<RawFrame>?> exportFrames() async {
+  //   if (_frames.isEmpty) {
+  //     return null;
+  //   }
+  //   final bytesImages = <RawFrame>[];
+  //   for (final frame in _frames) {
+  //     const format = ui.ImageByteFormat.png;
+  //     final bytesImage = await frame.image.toByteData(format: format);
+  //
+  //     if (frame.image.width >= _maxWidthFrame) {
+  //       _maxWidthFrame = frame.image.width;
+  //     }
+  //
+  //     if (frame.image.height >= _maxHeightFrame) {
+  //       _maxHeightFrame = frame.image.height;
+  //     }
+  //
+  //     if (bytesImage != null) {
+  //       bytesImages.add(RawFrame(16, bytesImage));
+  //     } else {
+  //       debugPrint('Skipped frame while enconding');
+  //     }
+  //   }
+  //   return bytesImages;
+  // }
 
   static Future<image.Image> convertUiImageToImage(ui.Image uiImage) async {
     // Convert ui.Image to ByteData
@@ -79,67 +76,7 @@ class Exporter {
   }
 
   Future<File?> exportVideo({ValueChanged<ExportResult>? onProgress}) async {
-    return await createVideoFromImages(
-
-    );
-  }
-
-  Future<List<int>?> exportGif({ValueChanged<ExportResult>? onProgress}) async {
-    ExportResult exportStatus = ExportResult(status: ExportStatus.exporting, percent: 0);
-    onProgress?.call(exportStatus);
-    debugPrint('Exporting gif ${DateTime.now()}');
-    final frames = await exportFrames();
-
-    debugPrint('End Exporting gif ${DateTime.now()}');
-    if (frames == null) {
-      return null;
-    }
-    exportStatus = ExportResult(status: ExportStatus.exported, percent: 0);
-    onProgress?.call(exportStatus);
-
-    return await _exportGif(DataHolder(frames, _maxWidthFrame, _maxHeightFrame), onProgress: onProgress);
-  }
-
-  static Future<List<int>?> _exportGif(DataHolder data, {ValueChanged<ExportResult>? onProgress}) async {
-    List<RawFrame> frames = data.frames;
-    int width = data.width;
-    int height = data.height;
-
-    image.Image mainImage = image.Image.empty();
-    int i = 1;
-    int max = frames.length;
-
-    DateTime start = DateTime.now();
-
-    for (final frame in frames) {
-      double percent = double.parse((i / max).toStringAsFixed(4));
-      ExportResult exportStatus = ExportResult(status: ExportStatus.encoding, percent: percent);
-
-      onProgress?.call(exportStatus);
-      i += 1;
-
-      DataFrame dataFrame = DataFrame(frame: frame, mainImage: mainImage, width: width, height: height);
-
-      var newFrame = await _handelFrame(dataFrame);
-
-      if (newFrame == null) {
-        continue;
-      }
-
-      mainImage.frames.add(newFrame);
-    }
-
-    DateTime endAddFrame = DateTime.now();
-    debugPrint('End Exporting gif v1 ${endAddFrame.difference(start).inSeconds}');
-
-    var resul = image.encodeGif(
-      mainImage,
-    );
-
-    debugPrint('encodeGif ${DateTime.now().difference(endAddFrame).inSeconds}');
-    ExportResult exportStatus = ExportResult(status: ExportStatus.encoded);
-    onProgress?.call(exportStatus);
-    return resul;
+    return await createVideoFromImages();
   }
 
   static image.PaletteUint8 _convertPalette(image.Palette palette) {
