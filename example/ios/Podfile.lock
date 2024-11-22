@@ -9,9 +9,10 @@ PODS:
     - ffmpeg-kit-ios-https (= 6.0)
     - Flutter
   - Flutter (1.0.0)
-  - media_meta_plus (0.0.1):
-    - Flutter
   - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - video_player_avfoundation (0.0.1):
     - Flutter
     - FlutterMacOS
 
@@ -19,8 +20,8 @@ DEPENDENCIES:
   - bitmap (from `.symlinks/plugins/bitmap/ios`)
   - ffmpeg_kit_flutter (from `.symlinks/plugins/ffmpeg_kit_flutter/ios`)
   - Flutter (from `Flutter`)
-  - media_meta_plus (from `.symlinks/plugins/media_meta_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
+  - video_player_avfoundation (from `.symlinks/plugins/video_player_avfoundation/darwin`)
 
 SPEC REPOS:
   trunk:
@@ -33,19 +34,19 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/ffmpeg_kit_flutter/ios"
   Flutter:
     :path: Flutter
-  media_meta_plus:
-    :path: ".symlinks/plugins/media_meta_plus/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
+  video_player_avfoundation:
+    :path: ".symlinks/plugins/video_player_avfoundation/darwin"
 
 SPEC CHECKSUMS:
   bitmap: 591b0556efe6e811a263b8dfdc511fe1faa72315
   ffmpeg-kit-ios-https: f9c838aa5400a6c5ba12324c6b798f52197ba354
   ffmpeg_kit_flutter: b4ca70cac3fc1d8ac14cdc660754b60870358732
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  media_meta_plus: 2fc651f0deebb74eabb3551cb417607c886bf070
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  video_player_avfoundation: 7c6c11d8470e1675df7397027218274b6d2360b3
 
 PODFILE CHECKSUM: 1959d098c91d8a792531a723c4a9d7e9f6a01e38
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

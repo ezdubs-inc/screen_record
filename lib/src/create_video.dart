@@ -1,32 +1,25 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
-
-import 'package:media_meta_plus/media_meta_plus.dart';
-
 import 'package:path_provider/path_provider.dart';
-
 import 'exporter.dart';
 import 'package:path/path.dart';
 
 Future<File?> createVideoFromImages() async {
   try {
     /// tinh toan: estimation time de xac dinh % progress
-    // final int frame = await estimateTimeRendering(duration);
     String cacheDir = (await getApplicationDocumentsDirectory()).path;
     final input = join(cacheDir, 'rendering');
 
     String outputName = DateTime.now().millisecondsSinceEpoch.toString();
-    //
     final outputPath = join(cacheDir, '$outputName.mp4');
 
 
     final Directory directory = Directory(input);
+
     String temp = '${directory.path}/frame_%04d.bmp';
 
     String command = '-i $temp -threads 8  $outputPath';
-    var list = await directory.listSync();
-    print(list.length);
 
     var session = await FFmpegKit.execute(command);
 

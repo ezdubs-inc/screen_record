@@ -34,6 +34,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
+enum RecordStatus { none, recording, stop, exporting }
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -44,8 +46,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  bool _recording = false;
-  bool _exporting = false;
+  RecordStatus status = RecordStatus.none;
+
   ScreenRecorderController controller = ScreenRecorderController(
     binding: WidgetsFlutterBinding.ensureInitialized(),
     skipFramesBetweenCaptures: 0,
@@ -55,16 +57,12 @@ class _MyHomePageState extends State<MyHomePage> {
   bool get canExport => controller.exporter.hasFrames;
   double percentExport = 0;
 
-
   Duration duration = const Duration(seconds: 3);
-
 
   File? testFile;
 
   @override
   void initState() {
-    // TODO: implement initState
-    _getList();
     super.initState();
   }
 
@@ -91,29 +89,49 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
               ),
-              if(!_recording)
-              ElevatedButton(
-                onPressed: () async {
-                  await controller.start();
-                  Future.delayed(Duration(seconds: 10)).then((_)async{
-                     controller.stop();
+              if (status == RecordStatus.none)
+                ElevatedButton(
+                  onPressed: () async {
+                    await controller.start();
+                    setState(() {
+                      status = RecordStatus.recording;
+                    });
+                  },
+                  child: const Text('Start Recording'),
+                ),
+              if (status == RecordStatus.recording)
+                ElevatedButton(
+                  onPressed: () async {
+                    controller.stop();
+                    setState(() {
+                      status = RecordStatus.stop;
+                    });
+                  },
+                  child: const Text('Stop Recording'),
+                ),
 
-                  });
-                },
-                child: const Text('Start Recording'),
-              ),
+              if (status == RecordStatus.stop)
+                ElevatedButton(
+                  onPressed: () async {
+                    File? file = await controller.exporter.exportVideo();
+                    await showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AnimatedScreen(
+                          file: file!,
+                        );
+                      },
+                    );
+                    setState(() {
+                      status = RecordStatus.none;
+                    });
+                  },
+                  child: const Text('Stop Recording'),
+                )
             ],
           ),
         ),
       ),
     );
-  }
-
-  void _getList() async {
-    // final directory = await getApplicationDocumentsDirectory();
-    // var list = await Directory('${directory.path}/temp').listSync();
-    // String path = list.first.path;
-    // testFile = File(path);
-    // setState(() {});
   }
 }
