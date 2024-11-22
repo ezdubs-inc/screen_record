@@ -1,7 +1,7 @@
 name: screen_record_plus
 description: "Capture, edit, and share your screen effortlessly with the Record widget."
-version: 0.0.1
-repository: https://github.com/BrianTran24/screenrecorder
+version: 0.0.3
+repository: https://github.com/BrianTran24/screen_record
 homepage: https://pub.dev/publishers/brian98.com/packages
 
 environment:
