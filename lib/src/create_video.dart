@@ -1,16 +1,20 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit_config.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'exporter.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+
+import 'exporter.dart';
 
 Future<File?> createVideoFromImages({
   required Duration duration,
   ValueChanged<ExportResult>? onProgress,
   double speed = 1,
+  required bool multiCache,
+  required String cacheFolder,
 }) async {
   try {
     /// tinh toan: estimation time de xac dinh % progress
@@ -18,7 +22,23 @@ Future<File?> createVideoFromImages({
     final input = join(cacheDir, 'rendering');
 
     String outputName = DateTime.now().millisecondsSinceEpoch.toString();
+
+    if (multiCache == false) {
+      outputName = "ScreenRecord";
+    }
+
+    // check cacheFolder exists
+    final Directory cacheFolderDir = Directory(join(cacheDir, cacheFolder));
+    if (!cacheFolderDir.existsSync()) {
+      cacheFolderDir.createSync();
+    }
+    cacheDir = cacheFolderDir.path;
     final outputPath = join(cacheDir, '$outputName.mp4');
+
+    // if output file exists, delete it
+    if (File(outputPath).existsSync()) {
+      File(outputPath).deleteSync();
+    }
 
     final Directory directory = Directory(input);
 
@@ -28,7 +48,7 @@ Future<File?> createVideoFromImages({
 
     if (onProgress != null) {
       FFmpegKitConfig.enableStatisticsCallback(
-            (statistics) {
+        (statistics) {
           final time = statistics.getTime();
           double percent = time / duration.inMilliseconds;
           if (percent > 1) {
@@ -46,8 +66,7 @@ Future<File?> createVideoFromImages({
 
     if (a?.isValueSuccess() ?? false) {
       /// kiểm tra đã ghi xuống local chưa
-      await waitForFile(
-          file: File(outputPath), timeout: const Duration(seconds: 10));
+      await waitForFile(file: File(outputPath), timeout: const Duration(seconds: 10));
       ExportResult exportResult = ExportResult(
         status: ExportStatus.exported,
         file: File(outputPath),
@@ -74,8 +93,7 @@ Future<File> waitForFile({
 
   while (!file.existsSync()) {
     if (DateTime.now().isAfter(expiryTime)) {
-      throw TimeoutException(
-          "File not found after waiting for the specified duration.");
+      throw TimeoutException("File not found after waiting for the specified duration.");
     }
     await Future.delayed(const Duration(milliseconds: 500));
   }

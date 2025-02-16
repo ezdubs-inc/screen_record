@@ -2,13 +2,13 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:bitmap/bitmap.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+
 import '../screen_record_plus.dart';
 
 Size globalSize = const Size(0, 0);
@@ -66,6 +66,20 @@ class ScreenRecorderController {
 
   int fileIndex = 0;
 
+  Future<void> clearCacheFolder(String cacheFolder) async {
+    String cacheDir = (await getApplicationDocumentsDirectory()).path;
+    String fullPath = join(cacheDir, cacheFolder);
+    Directory directory = Directory(fullPath);
+    if (await directory.exists()) {
+      final files = directory.listSync();
+      for (var file in files) {
+        if (file is File) {
+          await file.delete();
+        }
+      }
+    }
+  }
+
   Future<void> start() async {
     endTime = null;
     fileIndex = 1;
@@ -77,7 +91,7 @@ class ScreenRecorderController {
     Directory directory = await getApplicationDocumentsDirectory();
     String path = directory.path;
     Directory renderingDir = Directory(join(path, 'rendering'));
-    if(!await renderingDir.exists()) {
+    if (!await renderingDir.exists()) {
       await renderingDir.create();
     }
     await clearRenderingDirectory();
@@ -143,7 +157,6 @@ class ScreenRecorderController {
   }
 
   Future<File> saveBitmapToCache(Bitmap bitmap, String folderName, int index) async {
-
     String cacheDir = (await getApplicationDocumentsDirectory()).path;
     String ext = '.bmp';
     String nameWithExtension = 'frame_${generateFormattedString(index)}$ext';
@@ -221,21 +234,20 @@ Future<void> clearRenderingDirectory() async {
 class AppUtil {
   static Future<String> createFolderInAppDocDir(String folderName) async {
     //Get this App Document Directory
-    final Directory _appDocDir = await getApplicationDocumentsDirectory();
+    final Directory appDocDir = await getApplicationDocumentsDirectory();
     //App Document Directory + folder name
-    final Directory _appDocDirFolder = Directory('${_appDocDir.path}/$folderName/');
+    final Directory appDocDirFolder = Directory('${appDocDir.path}/$folderName/');
 
-    if (await _appDocDirFolder.exists()) {
+    if (await appDocDirFolder.exists()) {
       //if folder already exists return path
-      return _appDocDirFolder.path;
+      return appDocDirFolder.path;
     } else {
       //if folder not exists create folder and then return its path
-      final Directory _appDocDirNewFolder = await _appDocDirFolder.create(recursive: true);
-      return _appDocDirNewFolder.path;
+      final Directory appDocDirNewFolder = await appDocDirFolder.create(recursive: true);
+      return appDocDirNewFolder.path;
     }
   }
 }
-
 
 /// Chuyển đổi ui.Image thành Bitmap
 Future<Bitmap> uiImageToBitmap(ui.Image image) async {

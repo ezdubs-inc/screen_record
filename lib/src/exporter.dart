@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui show ImageByteFormat, Image;
+
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as image;
+
 import '../screen_record_plus.dart';
 import 'create_video.dart';
 
@@ -38,16 +40,18 @@ class Exporter {
     final uint8List = byteData.buffer.asUint8List();
 
     // Decode Uint8List to image.Image
-    final _image = image.decodeImage(uint8List);
-    if (_image == null) {
+    final imageTMP = image.decodeImage(uint8List);
+    if (imageTMP == null) {
       throw Exception('Failed to decode Uint8List to image.Image');
     }
 
-    return _image;
+    return imageTMP;
   }
 
-  Future<File?> exportVideo(
-      {ValueChanged<ExportResult>? onProgress, double speed = 1}) async {
+  /// [multiCache] is used to determine whether to create a new Video file for each recording or not.
+  ///
+  /// [cacheFolder] is the folder where the cache is stored. Default ScreenRecordVideos
+  Future<File?> exportVideo({ValueChanged<ExportResult>? onProgress, double speed = 1, bool multiCache = false, String cacheFolder = "ScreenRecordVideos"}) async {
     if (duration == null) {
       throw Exception('Duration is null');
     }
@@ -55,6 +59,8 @@ class Exporter {
       duration: duration!,
       onProgress: onProgress,
       speed: speed,
+      multiCache: multiCache,
+      cacheFolder: cacheFolder,
     );
     clearRenderingDirectory();
     return result;
@@ -63,8 +69,7 @@ class Exporter {
   static image.PaletteUint8 _convertPalette(image.Palette palette) {
     final newPalette = image.PaletteUint8(palette.numColors, 4);
     for (var i = 0; i < palette.numColors; i++) {
-      newPalette.setRgba(
-          i, palette.getRed(i), palette.getGreen(i), palette.getBlue(i), 255);
+      newPalette.setRgba(i, palette.getRed(i), palette.getGreen(i), palette.getBlue(i), 255);
     }
     return newPalette;
   }
@@ -95,8 +100,7 @@ class Exporter {
       for (final srcPixel in srcFrame) {
         if (srcPixel.a < transparencyThreshold) {
           final newPixel = newFrame.getPixel(srcPixel.x, srcPixel.y);
-          palette.setAlpha(
-              newPixel.index.toInt(), 0); // Set the palette color alpha to 0
+          palette.setAlpha(newPixel.index.toInt(), 0); // Set the palette color alpha to 0
         }
       }
 
@@ -113,11 +117,7 @@ class DataFrame {
   final int width;
   final int height;
 
-  DataFrame(
-      {required this.frame,
-      required this.mainImage,
-      required this.width,
-      required this.height});
+  DataFrame({required this.frame, required this.mainImage, required this.width, required this.height});
 }
 
 class RawFrame {

@@ -2,10 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
-import 'package:image/image.dart' as img;
 
 class AnimatedScreen extends StatefulWidget {
   const AnimatedScreen({super.key, required this.file});
@@ -21,7 +19,7 @@ class _AnimatedScreenState extends State<AnimatedScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
+  
     _controller = VideoPlayerController.file(
       widget.file,
       videoPlayerOptions: VideoPlayerOptions(),
@@ -44,8 +42,7 @@ class _AnimatedScreenState extends State<AnimatedScreen> {
         _controller.value.isPlaying ? _controller.pause() : _controller.play();
       },
       child: SafeArea(
-        child: Padding(padding: const EdgeInsets.all(20),
-        child: AspectRatio(aspectRatio: 9 / 16, child: VideoPlayer(_controller))),
+        child: Padding(padding: const EdgeInsets.all(20), child: AspectRatio(aspectRatio: 9 / 16, child: VideoPlayer(_controller))),
       ),
     );
   }
