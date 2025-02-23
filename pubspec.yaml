@@ -1,6 +1,6 @@
 name: screen_record_plus
 description: "Capture, edit, and share your screen effortlessly with the Record widget."
-version: 0.0.3
+version: 0.0.4
 repository: https://github.com/BrianTran24/screen_record
 homepage: https://pub.dev/publishers/brian98.com/packages
 
@@ -28,7 +28,6 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
-flutter:
 
   # To add assets to your package, add an assets section, like this:
   # assets:

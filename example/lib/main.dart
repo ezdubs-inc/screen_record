@@ -1,11 +1,8 @@
 import 'dart:io';
 
-
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit_config.dart';
 import 'package:flutter/material.dart';
 import 'package:screen_record_plus/screen_record_plus.dart';
 
-import 'animated_screen.dart';
 import 'sample_animation.dart';
 
 void main() {
@@ -107,27 +104,25 @@ class _MyHomePageState extends State<MyHomePage> {
                   },
                   child: const Text('Stop Recording'),
                 ),
-
               if (status == RecordStatus.stop)
                 ElevatedButton(
                   onPressed: () async {
-                    File? file = await controller.exporter.exportVideo(onProgress: (value){
-                      print(value);
+                    await controller.exporter.exportVideo(multiCache: false, cacheFolder: "test2").then((val) {
+                      debugPrint('File Exported: $val');
                     });
-                    await showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AnimatedScreen(
-                          file: file!,
-                        );
-                      },
-                    );
+
                     setState(() {
                       status = RecordStatus.none;
                     });
                   },
-                  child: const Text('Stop Recording'),
-                )
+                  child: const Text('Export'),
+                ),
+              ElevatedButton(
+                onPressed: () async {
+                  controller.clearCacheFolder("test2");
+                },
+                child: const Text('Clear Cache Folder'),
+              )
             ],
           ),
         ),
