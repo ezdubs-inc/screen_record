@@ -58,7 +58,7 @@ Future<File?> createVideoFromImagesAndAudio({
     if (audioPath != null) {
       // First convert audio to AAC format for compatibility
       String tempAacPath = join(cacheDir, '${outputName}_temp.aac');
-      String audioCommand = '-f f32le -ar 44100 -ac 2 -i "$audioPath" '
+      String audioCommand = '-f s16le -ar 44100 -ac 2 -i "$audioPath" '
           '-c:a aac -b:a 192k "$tempAacPath"';
       
       var audioSession = await FFmpegKit.execute(audioCommand);
