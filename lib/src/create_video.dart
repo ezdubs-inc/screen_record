@@ -60,6 +60,8 @@ Future<File?> createVideoFromImagesAndAudio({
       
       // Convert raw audio directly to AAC
       String aacPath = join(cacheDir, '${outputName}_temp.aac');
+      
+      // Basic audio conversion without speed adjustment
       String audioCommand = '-y -f s16le -ar 44100 -ac 2 -i "$rawAudioPath" '
           '-c:a aac -b:a 192k "$aacPath"';
       
@@ -84,19 +86,61 @@ Future<File?> createVideoFromImagesAndAudio({
     // Build FFmpeg command based on whether audio is present
     String command;
     if (audioPath != null) {
-      // Now combine video and audio using the effective frame rate
+      // Calculate video duration based on frame count and effective frame rate
+      final Directory frameDir = Directory(input);
+      final int frameCount = frameDir.existsSync() 
+          ? frameDir.listSync().where((e) => e.path.endsWith('.bmp')).length 
+          : 0;
+      
+      // Calculate video duration in seconds
+      final double videoDurationSeconds = frameCount / effectiveFrameRate;
+      
+      // Create a temporary file for audio with adjusted duration
+      String adjustedAudioPath = join(cacheDir, '${outputName}_adjusted.aac');
+      
+      // Get audio duration using FFprobe
+      String durationProbeCommand = '-v error -show_entries format=duration '
+          '-of default=noprint_wrappers=1:nokey=1 "$audioPath"';
+      var probeSession = await FFmpegKit.execute('ffprobe $durationProbeCommand');
+      var probeLog = await probeSession.getLogsAsString();
+      double audioDuration = 0;
+      try {
+        audioDuration = double.parse(probeLog.trim());
+      } catch (e) {
+        print('Could not parse audio duration: $e');
+      }
+      
+      // If audio duration is valid and different from video duration, adjust it
+      if (audioDuration > 0 && (videoDurationSeconds / audioDuration).abs() > 1.05) {
+        String stretchCommand = '-i "$audioPath" -filter:a "asetrate=44100*$audioDuration/$videoDurationSeconds,aresample=44100" '
+            '-c:a aac -b:a 192k "$adjustedAudioPath"';
+        var stretchSession = await FFmpegKit.execute(stretchCommand);
+        var stretchReturnCode = await stretchSession.getReturnCode();
+        
+        if (stretchReturnCode?.isValueSuccess() ?? false) {
+          // Use the adjusted audio file
+          audioPath = adjustedAudioPath;
+        } else {
+          print('Audio adjustment failed, using original audio');
+        }
+      }
+      
+      // Now combine video and audio
       command = '-framerate $effectiveFrameRate -i $temp -i "$audioPath" '
           '-c:v h264_videotoolbox -b:v 2M '
-          '-c:a copy ' // Just copy the AAC audio since it's already in the right format
+          '-c:a copy ' // Copy the adjusted AAC audio
           '-pix_fmt yuv420p -movflags +faststart '
           '-vsync 1 ' // Ensure proper video sync
-          '-threads 8 -shortest $outputPath';
-          
-      // Clean up temp audio file after processing
+          '-threads 8 $outputPath';
+      
+      // Clean up temp audio files after processing
       Future.delayed(const Duration(seconds: 1), () {
         try {
           if (audioPath != null) {
             File(audioPath).deleteSync();
+          }
+          if (File(adjustedAudioPath).existsSync()) {
+            File(adjustedAudioPath).deleteSync();
           }
         } catch (e) {
           // Ignore cleanup errors
