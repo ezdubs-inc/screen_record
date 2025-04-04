@@ -51,16 +51,17 @@ class Exporter {
   /// [multiCache] is used to determine whether to create a new Video file for each recording or not.
   ///
   /// [cacheFolder] is the folder where the cache is stored. Default ScreenRecordVideos
-  Future<File?> exportVideo({ValueChanged<ExportResult>? onProgress, double speed = 1, bool multiCache = false, String cacheFolder = "ScreenRecordVideos"}) async {
+  Future<File?> exportVideo({ValueChanged<ExportResult>? onProgress, double speed = 1, bool multiCache = false, String cacheFolder = "ScreenRecordVideos", Uint8List? audioData}) async {
     if (duration == null) {
       throw Exception('Duration is null');
     }
-    File? result = await createVideoFromImages(
+    File? result = await createVideoFromImagesAndAudio(
       duration: duration!,
       onProgress: onProgress,
       speed: speed,
       multiCache: multiCache,
       cacheFolder: cacheFolder,
+      audioData: audioData,
     );
     clearRenderingDirectory();
     return result;
