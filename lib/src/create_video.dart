@@ -56,11 +56,11 @@ Future<File?> createVideoFromImagesAndAudio({
     // Build FFmpeg command based on whether audio is present
     String command;
     if (audioPath != null) {
-      command = '-i $temp -i "$audioPath" -c:v libx264 -preset slow -crf 18 '
+      command = '-i $temp -i "$audioPath" -c:v libx264 -crf 18 '
           '-c:a aac -b:a 192k -pix_fmt yuv420p -movflags +faststart -threads 8 '
           '-shortest $outputPath';
     } else {
-      command = '-i $temp -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p '
+      command = '-i $temp -c:v libx264 -crf 18 -pix_fmt yuv420p '
           '-movflags +faststart -threads 8 $outputPath';
     }
 
