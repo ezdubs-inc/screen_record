@@ -56,12 +56,35 @@ Future<File?> createVideoFromImagesAndAudio({
     // Build FFmpeg command based on whether audio is present
     String command;
     if (audioPath != null) {
-      command = '-i $temp -i "$audioPath" -c:v h264_videotoolbox -b:v 2M '
-          '-c:a aac -b:a 192k -pix_fmt yuv420p -movflags +faststart -threads 8 '
-          '-shortest $outputPath';
+      // First convert audio to AAC format for compatibility
+      String tempAacPath = join(cacheDir, '${outputName}_temp.aac');
+      String audioCommand = '-f f32le -ar 44100 -ac 2 -i "$audioPath" '
+          '-c:a aac -b:a 192k "$tempAacPath"';
+      
+      var audioSession = await FFmpegKit.execute(audioCommand);
+      var audioReturnCode = await audioSession.getReturnCode();
+      
+      if (!(audioReturnCode?.isValueSuccess() ?? false)) {
+        final logs = await audioSession.getLogsAsString();
+        throw Exception('Audio conversion failed: $logs');
+      }
+
+      // Now combine video and audio
+      command = '-framerate 25 -i $temp -i "$tempAacPath" -c:v h264_videotoolbox '
+          '-b:v 2M -c:a copy -pix_fmt yuv420p -movflags +faststart '
+          '-threads 8 -shortest $outputPath';
+          
+      // Clean up temp audio file after processing
+      Future.delayed(const Duration(seconds: 1), () {
+        try {
+          File(tempAacPath).deleteSync();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      });
     } else {
-      command = '-i $temp -c:v h264_videotoolbox -b:v 2M -pix_fmt yuv420p '
-          '-movflags +faststart -threads 8 $outputPath';
+      command = '-framerate 25 -i $temp -c:v h264_videotoolbox -b:v 2M '
+          '-pix_fmt yuv420p -movflags +faststart -threads 8 $outputPath';
     }
 
     if (onProgress != null) {
