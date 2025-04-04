@@ -95,7 +95,9 @@ Future<File?> createVideoFromImagesAndAudio({
       // Clean up temp audio file after processing
       Future.delayed(const Duration(seconds: 1), () {
         try {
-          File(audioPath).deleteSync();
+          if (audioPath != null) {
+            File(audioPath).deleteSync();
+          }
         } catch (e) {
           // Ignore cleanup errors
         }
