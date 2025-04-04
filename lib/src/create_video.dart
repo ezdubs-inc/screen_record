@@ -18,6 +18,8 @@ Future<File?> createVideoFromImagesAndAudio({
   required String cacheFolder,
   Uint8List? audioData,
   int skipFramesBetweenCaptures = 2,
+  int audioSampleRate = 48000,
+  int audioBitrate = 128000,
 }) async {
   try {
     // Calculate the effective frame rate based on skipped frames
@@ -61,9 +63,9 @@ Future<File?> createVideoFromImagesAndAudio({
       // Convert raw audio directly to AAC
       String aacPath = join(cacheDir, '${outputName}_temp.aac');
       
-      // Basic audio conversion without speed adjustment
-      String audioCommand = '-y -f s16le -ar 44100 -ac 2 -i "$rawAudioPath" '
-          '-c:a aac -b:a 192k "$aacPath"';
+      // Basic audio conversion with configurable sample rate and bitrate
+      String audioCommand = '-y -f s16le -ar $audioSampleRate -ac 2 -i "$rawAudioPath" '
+          '-c:a aac -b:a ${audioBitrate ~/ 1000}k "$aacPath"';
       
       var audioSession = await FFmpegKit.execute(audioCommand);
       var audioReturnCode = await audioSession.getReturnCode();
