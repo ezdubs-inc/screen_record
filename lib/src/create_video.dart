@@ -80,9 +80,16 @@ Future<File?> createVideoFromImagesAndAudio({
 
     var session = await FFmpegKit.execute(command);
 
-    var a = await session.getReturnCode();
+    var returnCode = await session.getReturnCode();
+    
+    // Add detailed error logging
+    final logs = await session.getOutput();
+    final errorLogs = await session.getLogsAsString();
+    print('FFmpeg Command: $command');
+    print('FFmpeg Output: $logs');
+    print('FFmpeg Error Logs: $errorLogs');
 
-    if (a?.isValueSuccess() ?? false) {
+    if (returnCode?.isValueSuccess() ?? false) {
       /// kiểm tra đã ghi xuống local chưa
       await waitForFile(file: File(outputPath), timeout: const Duration(seconds: 10));
       ExportResult exportResult = ExportResult(
