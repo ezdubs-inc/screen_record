@@ -83,11 +83,7 @@ Future<File?> createVideoFromImagesAndAudio({
     var returnCode = await session.getReturnCode();
     
     // Add detailed error logging
-    final logs = await session.getOutput();
-    final errorLogs = await session.getLogsAsString();
-    print('FFmpeg Command: $command');
-    print('FFmpeg Output: $logs');
-    print('FFmpeg Error Logs: $errorLogs');
+    final logs = await session.getLogsAsString();
 
     if (returnCode?.isValueSuccess() ?? false) {
       /// kiểm tra đã ghi xuống local chưa
@@ -101,6 +97,9 @@ Future<File?> createVideoFromImagesAndAudio({
       session.cancel();
 
       return File(outputPath);
+    } else {
+      print('FFmpeg Logs: $logs');
+      throw Exception('Create Video Failed: $logs');
     }
 
     session.cancel();
