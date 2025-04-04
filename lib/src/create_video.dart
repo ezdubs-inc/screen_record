@@ -54,17 +54,14 @@ Future<File?> createVideoFromImagesAndAudio({
     // If audio data is provided, save it to a temporary file
     String? audioPath;
     if (audioData != null) {
-      audioPath = join(cacheDir, '${outputName}_audio.wav');
-      await File(audioPath).writeAsBytes(audioData);
-    }
-
-    // Build FFmpeg command based on whether audio is present
-    String command;
-    if (audioPath != null) {
-      // First convert audio to AAC format for compatibility
-      String tempAacPath = join(cacheDir, '${outputName}_temp.aac');
-      String audioCommand = '-y -i "$audioPath" '
-          '-c:a aac -b:a 192k "$tempAacPath"';
+      // First save raw audio data
+      String rawAudioPath = join(cacheDir, '${outputName}_raw_audio.raw');
+      await File(rawAudioPath).writeAsBytes(audioData);
+      
+      // Convert raw audio directly to AAC
+      String aacPath = join(cacheDir, '${outputName}_temp.aac');
+      String audioCommand = '-y -f s16le -ar 44100 -ac 2 -i "$rawAudioPath" '
+          '-c:a aac -b:a 192k "$aacPath"';
       
       var audioSession = await FFmpegKit.execute(audioCommand);
       var audioReturnCode = await audioSession.getReturnCode();
@@ -74,10 +71,23 @@ Future<File?> createVideoFromImagesAndAudio({
         throw Exception('Audio conversion failed: $logs');
       }
 
+      // Clean up raw audio file
+      try {
+        File(rawAudioPath).deleteSync();
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+
+      audioPath = aacPath;
+    }
+
+    // Build FFmpeg command based on whether audio is present
+    String command;
+    if (audioPath != null) {
       // Now combine video and audio using the effective frame rate
-      command = '-framerate $effectiveFrameRate -i $temp -i "$tempAacPath" '
+      command = '-framerate $effectiveFrameRate -i $temp -i "$audioPath" '
           '-c:v h264_videotoolbox -b:v 2M '
-          '-c:a aac -ar 44100 ' // Ensure consistent audio sample rate
+          '-c:a copy ' // Just copy the AAC audio since it's already in the right format
           '-pix_fmt yuv420p -movflags +faststart '
           '-vsync 1 ' // Ensure proper video sync
           '-threads 8 -shortest $outputPath';
@@ -85,7 +95,7 @@ Future<File?> createVideoFromImagesAndAudio({
       // Clean up temp audio file after processing
       Future.delayed(const Duration(seconds: 1), () {
         try {
-          File(tempAacPath).deleteSync();
+          File(audioPath).deleteSync();
         } catch (e) {
           // Ignore cleanup errors
         }
