@@ -64,7 +64,7 @@ Future<File?> createVideoFromImagesAndAudio({
       String aacPath = join(cacheDir, '${outputName}_temp.aac');
       
       // Basic audio conversion with configurable sample rate and bitrate
-      String audioCommand = '-y -f s16le -ar $audioSampleRate -ac 2 -i "$rawAudioPath" '
+      String audioCommand = '-y -f s16le -ar $audioSampleRate -ac 1 -i "$rawAudioPath" '
           '-c:a aac -b:a ${audioBitrate ~/ 1000}k "$aacPath"';
       
       var audioSession = await FFmpegKit.execute(audioCommand);
