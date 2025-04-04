@@ -62,6 +62,7 @@ class Exporter {
       multiCache: multiCache,
       cacheFolder: cacheFolder,
       audioData: audioData,
+      skipFramesBetweenCaptures: skipFramesBetweenCaptures,
     );
     clearRenderingDirectory();
     return result;

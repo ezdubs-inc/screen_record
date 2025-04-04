@@ -17,8 +17,13 @@ Future<File?> createVideoFromImagesAndAudio({
   required bool multiCache,
   required String cacheFolder,
   Uint8List? audioData,
+  int skipFramesBetweenCaptures = 2,
 }) async {
   try {
+    // Calculate the effective frame rate based on skipped frames
+    // Assuming base Flutter frame rate of 60fps
+    final effectiveFrameRate = 60 ~/ (skipFramesBetweenCaptures + 1);
+
     /// tinh toan: estimation time de xac dinh % progress
     String cacheDir = (await getApplicationDocumentsDirectory()).path;
     final input = join(cacheDir, 'rendering');
@@ -58,7 +63,7 @@ Future<File?> createVideoFromImagesAndAudio({
     if (audioPath != null) {
       // First convert audio to AAC format for compatibility
       String tempAacPath = join(cacheDir, '${outputName}_temp.aac');
-      String audioCommand = '-y -f s16le -ar 44100 -ac 2 -i "$audioPath" '
+      String audioCommand = '-y -i "$audioPath" '
           '-c:a aac -b:a 192k "$tempAacPath"';
       
       var audioSession = await FFmpegKit.execute(audioCommand);
@@ -69,9 +74,12 @@ Future<File?> createVideoFromImagesAndAudio({
         throw Exception('Audio conversion failed: $logs');
       }
 
-      // Now combine video and audio
-      command = '-framerate 25 -i $temp -i "$tempAacPath" -c:v h264_videotoolbox '
-          '-b:v 2M -c:a copy -pix_fmt yuv420p -movflags +faststart '
+      // Now combine video and audio using the effective frame rate
+      command = '-framerate $effectiveFrameRate -i $temp -i "$tempAacPath" '
+          '-c:v h264_videotoolbox -b:v 2M '
+          '-c:a aac -ar 44100 ' // Ensure consistent audio sample rate
+          '-pix_fmt yuv420p -movflags +faststart '
+          '-vsync 1 ' // Ensure proper video sync
           '-threads 8 -shortest $outputPath';
           
       // Clean up temp audio file after processing
@@ -83,8 +91,8 @@ Future<File?> createVideoFromImagesAndAudio({
         }
       });
     } else {
-      command = '-framerate 25 -i $temp -c:v h264_videotoolbox -b:v 2M '
-          '-pix_fmt yuv420p -movflags +faststart -threads 8 $outputPath';
+      command = '-framerate $effectiveFrameRate -i $temp -c:v h264_videotoolbox -b:v 2M '
+          '-pix_fmt yuv420p -movflags +faststart -vsync 1 -threads 8 $outputPath';
     }
 
     if (onProgress != null) {
