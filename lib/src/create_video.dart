@@ -87,7 +87,7 @@ Future<File?> createVideoFromImagesAndAudio({
 
     // Build FFmpeg command based on whether audio is present
     String command;
-    final videoEncoder = Platform.isAndroid ? 'mediacodec' : 'h264_videotoolbox';
+    final videoEncoder = Platform.isAndroid ? 'mpeg4' : 'h264_videotoolbox';
 
     if (audioPath != null) {
       // Now combine video and audio without modifying either
