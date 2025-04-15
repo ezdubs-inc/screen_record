@@ -92,7 +92,7 @@ Future<File?> createVideoFromImagesAndAudio({
       // Now combine video and audio without modifying either
       if (Platform.isAndroid) {
         command = '-framerate $effectiveFrameRate -i $temp -i "$audioPath" '
-            '-c:v mpeg4 -profile:v 0 -q:v 3 -b:v 2M '
+            '-c:v h264_mediacodec -profile:v baseline -level 3.0 -b:v 2M '
             '-c:a aac -b:a 128k '
             '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" '
             '-pix_fmt yuv420p '
