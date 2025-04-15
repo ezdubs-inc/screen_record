@@ -94,9 +94,14 @@ Future<File?> createVideoFromImagesAndAudio({
       command = '-framerate $effectiveFrameRate -i $temp -i "$audioPath" '
           '-c:v $videoEncoder -b:v 2M '
           '-c:a copy ' // Copy the audio as-is
-          '-pix_fmt yuv420p -movflags +faststart '
+          '-pix_fmt yuv420p '
+          '-movflags +faststart+write_colr+write_gama '
+          '-profile:v baseline '
+          '-level 3.0 '
           '-vsync 1 ' // Ensure proper video sync
-          '-threads 8 $outputPath';
+          '-threads 8 '
+          '-y ' // Overwrite output file if exists
+          '$outputPath';
       
       // Clean up temp audio file after processing
       Future.delayed(const Duration(seconds: 1), () {
@@ -111,7 +116,14 @@ Future<File?> createVideoFromImagesAndAudio({
     } else {
       command = '-framerate $effectiveFrameRate -i $temp '
           '-c:v $videoEncoder -b:v 2M '
-          '-pix_fmt yuv420p -movflags +faststart -vsync 1 -threads 8 $outputPath';
+          '-pix_fmt yuv420p '
+          '-movflags +faststart+write_colr+write_gama '
+          '-profile:v baseline '
+          '-level 3.0 '
+          '-vsync 1 '
+          '-threads 8 '
+          '-y ' // Overwrite output file if exists
+          '$outputPath';
     }
 
     if (onProgress != null) {
