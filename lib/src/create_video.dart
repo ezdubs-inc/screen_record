@@ -94,6 +94,7 @@ Future<File?> createVideoFromImagesAndAudio({
         command = '-framerate $effectiveFrameRate -i $temp -i "$audioPath" '
             '-c:v mpeg4 -profile:v 0 -q:v 3 -b:v 2M '
             '-c:a aac -b:a 128k '
+            '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" '
             '-pix_fmt yuv420p '
             '-movflags +faststart '
             '-vsync 1 '
