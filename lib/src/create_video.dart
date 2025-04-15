@@ -87,14 +87,12 @@ Future<File?> createVideoFromImagesAndAudio({
 
     // Build FFmpeg command based on whether audio is present
     String command;
-    final videoEncoder = Platform.isIOS 
-        ? '-c:v h264_videotoolbox -b:v 2M'
-        : '-c:v libx264 -preset ultrafast -b:v 2M';
+    final videoEncoder = Platform.isAndroid ? 'libx264' : 'h264_videotoolbox';
 
     if (audioPath != null) {
       // Now combine video and audio without modifying either
       command = '-framerate $effectiveFrameRate -i $temp -i "$audioPath" '
-          '$videoEncoder '
+          '-c:v $videoEncoder -b:v 2M '
           '-c:a copy ' // Copy the audio as-is
           '-pix_fmt yuv420p -movflags +faststart '
           '-vsync 1 ' // Ensure proper video sync
@@ -112,7 +110,7 @@ Future<File?> createVideoFromImagesAndAudio({
       });
     } else {
       command = '-framerate $effectiveFrameRate -i $temp '
-          '$videoEncoder '
+          '-c:v $videoEncoder -b:v 2M '
           '-pix_fmt yuv420p -movflags +faststart -vsync 1 -threads 8 $outputPath';
     }
 
