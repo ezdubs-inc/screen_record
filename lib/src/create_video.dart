@@ -87,21 +87,27 @@ Future<File?> createVideoFromImagesAndAudio({
 
     // Build FFmpeg command based on whether audio is present
     String command;
-    final videoEncoder = Platform.isAndroid ? 'mpeg4' : 'h264_videotoolbox';
 
     if (audioPath != null) {
       // Now combine video and audio without modifying either
-      command = '-framerate $effectiveFrameRate -i $temp -i "$audioPath" '
-          '-c:v $videoEncoder -b:v 2M '
-          '-c:a copy ' // Copy the audio as-is
-          '-pix_fmt yuv420p '
-          '-movflags +faststart+write_colr+write_gama '
-          '-profile:v baseline '
-          '-level 3.0 '
-          '-vsync 1 ' // Ensure proper video sync
-          '-threads 8 '
-          '-y ' // Overwrite output file if exists
-          '$outputPath';
+      if (Platform.isAndroid) {
+        command = '-framerate $effectiveFrameRate -i $temp -i "$audioPath" '
+            '-c:v mpeg4 -b:v 2M '
+            '-c:a copy ' // Copy the audio as-is
+            '-pix_fmt yuv420p '
+            '-movflags +faststart '
+            '-vsync 1 ' // Ensure proper video sync
+            '-threads 8 '
+            '-y ' // Overwrite output file if exists
+            '$outputPath';
+      } else {
+        command = '-framerate $effectiveFrameRate -i $temp -i "$audioPath" '
+            '-c:v h264_videotoolbox -b:v 2M '
+            '-c:a copy ' // Copy the audio as-is
+            '-pix_fmt yuv420p -movflags +faststart '
+            '-vsync 1 ' // Ensure proper video sync
+            '-threads 8 $outputPath';
+      }
       
       // Clean up temp audio file after processing
       Future.delayed(const Duration(seconds: 1), () {
@@ -114,16 +120,20 @@ Future<File?> createVideoFromImagesAndAudio({
         }
       });
     } else {
-      command = '-framerate $effectiveFrameRate -i $temp '
-          '-c:v $videoEncoder -b:v 2M '
-          '-pix_fmt yuv420p '
-          '-movflags +faststart+write_colr+write_gama '
-          '-profile:v baseline '
-          '-level 3.0 '
-          '-vsync 1 '
-          '-threads 8 '
-          '-y ' // Overwrite output file if exists
-          '$outputPath';
+      if (Platform.isAndroid) {
+        command = '-framerate $effectiveFrameRate -i $temp '
+            '-c:v mpeg4 -b:v 2M '
+            '-pix_fmt yuv420p '
+            '-movflags +faststart '
+            '-vsync 1 '
+            '-threads 8 '
+            '-y ' // Overwrite output file if exists
+            '$outputPath';
+      } else {
+        command = '-framerate $effectiveFrameRate -i $temp '
+            '-c:v h264_videotoolbox -b:v 2M '
+            '-pix_fmt yuv420p -movflags +faststart -vsync 1 -threads 8 $outputPath';
+      }
     }
 
     if (onProgress != null) {
